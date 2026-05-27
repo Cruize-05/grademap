@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
 
 const Landing = lazy(() => import("./pages/Landing.tsx"));
 const SignIn = lazy(() => import("./pages/SignIn.tsx"));
@@ -24,12 +25,47 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/sign-in" element={<SignIn />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/grades" element={<Grades />} />
-        <Route path="/plan" element={<Plan />} />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute allowIncompleteProfile>
+              <Onboarding />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/grades"
+          element={
+            <ProtectedRoute>
+              <Grades />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plan"
+          element={
+            <ProtectedRoute>
+              <Plan />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/courses/:id" element={<CourseDetail />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>

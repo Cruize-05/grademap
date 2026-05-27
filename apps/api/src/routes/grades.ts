@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
-import { supabase } from "../middleware/auth.js";
+import { supabaseAdmin } from "../middleware/auth.js";
 
 export const gradesRouter = Router();
 
@@ -28,7 +28,9 @@ gradesRouter.post("/", async (req, res, next) => {
   try {
     const body = gradeSubmitSchema.parse(req.body);
 
-    const { data: course, error: courseErr } = await supabase
+    // Course catalogue is publicly readable; use admin for the existence check
+    // to avoid an unnecessary RLS hop.
+    const { data: course, error: courseErr } = await supabaseAdmin
       .from("courses")
       .select("id, institution_id")
       .eq("id", body.courseId)
@@ -39,8 +41,9 @@ gradesRouter.post("/", async (req, res, next) => {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("grade_submissions")
+    // INSERT runs as the user so the gs_insert RLS policy verifies profile_id = auth.uid().
+    const { data, error } = await req
+      .supabase!.from("grade_submissions")
       .insert({
         profile_id: req.userId,
         course_id: body.courseId,
@@ -65,8 +68,8 @@ gradesRouter.post("/bulk", async (req, res, next) => {
     const rows = z.array(csvRowSchema).parse(req.body);
     const results = await Promise.allSettled(
       rows.map(async (row) => {
-        const { data, error } = await supabase
-          .from("grade_submissions")
+        const { data, error } = await req
+          .supabase!.from("grade_submissions")
           .insert({
             profile_id: req.userId,
             course_id: row.courseId,
@@ -97,8 +100,9 @@ gradesRouter.post("/bulk", async (req, res, next) => {
 
 gradesRouter.get("/mine", async (req, res, next) => {
   try {
-    const { data, error } = await supabase
-      .from("grade_submissions")
+    // RLS gs_select policy ensures only own rows are returned even if profile_id is omitted.
+    const { data, error } = await req
+      .supabase!.from("grade_submissions")
       .select(
         "id, course_id, semester, academic_year, grade, grade_point, status, created_at, courses(code, title, credits)"
       )

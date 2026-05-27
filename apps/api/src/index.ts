@@ -10,6 +10,7 @@ import { coursesRouter } from "./routes/courses.js";
 import { gradesRouter } from "./routes/grades.js";
 import { insightsRouter } from "./routes/insights.js";
 import { adminRouter } from "./routes/admin.js";
+import { institutionsRouter } from "./routes/institutions.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { requireAuth } from "./middleware/auth.js";
 
@@ -38,8 +39,9 @@ const globalLimiter = rateLimit({
 app.use(globalLimiter);
 
 app.use("/api/health", healthRouter);
-app.use("/api/me", requireAuth, meRouter);
+app.use("/api/institutions", institutionsRouter);
 app.use("/api/courses", coursesRouter);
+app.use("/api/me", requireAuth, meRouter);
 app.use("/api/grades", requireAuth, gradesRouter);
 app.use("/api", requireAuth, insightsRouter);
 app.use("/api/admin", requireAuth, adminRouter);

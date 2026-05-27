@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
-import { supabase } from "../middleware/auth.js";
 import axios from "axios";
+import { supabaseAdmin } from "../middleware/auth.js";
 
 export const coursesRouter = Router();
 
@@ -14,17 +14,19 @@ const searchSchema = z.object({
   limit: z.coerce.number().min(1).max(50).default(20),
 });
 
+/** GET /api/courses — public read of the course catalogue. */
 coursesRouter.get("/", async (req, res, next) => {
   try {
     const { institution, q, limit } = searchSchema.parse(req.query);
 
-    let query = supabase
+    let query = supabaseAdmin
       .from("courses")
       .select("id, code, title, credits, level, institution_id")
+      .order("code")
       .limit(limit);
 
     if (institution) {
-      const { data: inst } = await supabase
+      const { data: inst } = await supabaseAdmin
         .from("institutions")
         .select("id")
         .eq("code", institution)
@@ -45,6 +47,7 @@ coursesRouter.get("/", async (req, res, next) => {
   }
 });
 
+/** GET /api/courses/:id/difficulty — k-anonymity enforced. */
 coursesRouter.get("/:id/difficulty", async (req, res, next) => {
   try {
     const { id } = req.params;

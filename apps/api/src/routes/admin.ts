@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import axios from "axios";
-import { supabase, requireAdmin } from "../middleware/auth.js";
+import { supabaseAdmin, requireAdmin } from "../middleware/auth.js";
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -11,7 +11,7 @@ const MINING_SECRET = process.env["MINING_SHARED_SECRET"] ?? "";
 
 adminRouter.get("/quarantine", async (req, res, next) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("grade_submissions")
       .select(
         "id, profile_id, course_id, semester, academic_year, grade, created_at, courses(code, title)"
@@ -33,7 +33,7 @@ adminRouter.post("/quarantine/:id/approve", async (req, res, next) => {
     const { id } = req.params;
     const { notes } = actionSchema.parse(req.body);
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("grade_submissions")
       .update({ status: "approved" })
       .eq("id", id)
@@ -41,7 +41,7 @@ adminRouter.post("/quarantine/:id/approve", async (req, res, next) => {
 
     if (error) throw error;
 
-    await supabase.from("admin_audit_log").insert({
+    await supabaseAdmin.from("admin_audit_log").insert({
       actor_id: req.userId,
       action: "approve_submission",
       target_id: id,
@@ -59,7 +59,7 @@ adminRouter.post("/quarantine/:id/reject", async (req, res, next) => {
     const { id } = req.params;
     const { notes } = actionSchema.parse(req.body);
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("grade_submissions")
       .update({ status: "rejected" })
       .eq("id", id)
@@ -67,7 +67,7 @@ adminRouter.post("/quarantine/:id/reject", async (req, res, next) => {
 
     if (error) throw error;
 
-    await supabase.from("admin_audit_log").insert({
+    await supabaseAdmin.from("admin_audit_log").insert({
       actor_id: req.userId,
       action: "reject_submission",
       target_id: id,
