@@ -1,6 +1,9 @@
 -- Synthetic grade data — DEV / CI ONLY. NEVER run in production.
--- Generates ~500 plausible grade records spread across the sample UB courses.
--- Uses a PL/pgSQL block to loop and insert varied data.
+-- Generates 30 synthetic students × 2 semesters × 5 courses = ~300 approved
+-- grade records spread across the sample UB courses.
+--
+-- Each synthetic student gets a row in auth.users and profiles, marked as
+-- verified, so RLS and aggregate logic work correctly.
 
 DO $$
 DECLARE
@@ -13,6 +16,7 @@ DECLARE
   v_profile_id     uuid;
   i                int;
   j                int;
+  k                int;
   g                int;
 BEGIN
   SELECT id INTO v_institution_id FROM institutions WHERE code = 'UB';
@@ -23,22 +27,29 @@ BEGIN
 
   SELECT ARRAY_AGG(id) INTO v_course_ids FROM courses WHERE institution_id = v_institution_id;
 
-  -- Create 30 synthetic profiles (no auth.users rows — only for testing the mining pipeline)
+  -- Create 30 synthetic profiles (with matching auth.users rows for FK integrity)
   FOR i IN 1..30 LOOP
     v_profile_id := gen_random_uuid();
 
-    -- Each synthetic student takes 4-6 courses per semester for 2 semesters
+    INSERT INTO auth.users (id, email)
+    VALUES (v_profile_id, 'synth-' || i::text || '@ub.cm')
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO profiles (id, institution_id, programme, level, verified_at)
+    VALUES (v_profile_id, v_institution_id, 'CS', 2, now())
+    ON CONFLICT DO NOTHING;
+
+    -- Each synthetic student takes 5 courses per semester for 2 semesters
     FOR j IN 1..2 LOOP
       FOR k IN 1..5 LOOP
-        -- Pick a random course
         v_course_id := v_course_ids[1 + (floor(random() * array_length(v_course_ids, 1)))::int];
         -- Weighted random grade (slightly skewed toward passing)
         g := CASE
-          WHEN random() < 0.15 THEN 7  -- F
-          WHEN random() < 0.25 THEN 6  -- D
-          WHEN random() < 0.45 THEN 5  -- C
-          WHEN random() < 0.65 THEN 4  -- C+
-          WHEN random() < 0.80 THEN 3  -- B
+          WHEN random() < 0.10 THEN 7  -- F
+          WHEN random() < 0.22 THEN 6  -- D
+          WHEN random() < 0.40 THEN 5  -- C
+          WHEN random() < 0.60 THEN 4  -- C+
+          WHEN random() < 0.78 THEN 3  -- B
           WHEN random() < 0.92 THEN 2  -- B+
           ELSE 1                        -- A
         END;
