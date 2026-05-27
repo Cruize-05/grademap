@@ -191,3 +191,5 @@ This check occurs at **both** the mining service and the API gateway (defence in
 ## Ethical disclaimer
 
 > This platform provides statistical guidance based on historical anonymised data. It is **not** academic advice. Always confirm course selection with your faculty advisor.
+
+Last bootstrapped: 2026-05-27
