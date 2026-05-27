@@ -1,0 +1,45 @@
+name: CI — Mining
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mining/**"
+      - ".github/workflows/ci-mining.yml"
+  pull_request:
+    paths:
+      - "apps/mining/**"
+
+jobs:
+  ci:
+    name: Ruff · MyPy · Pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mining
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -r requirements-dev.txt
+
+      - name: Ruff lint
+        run: ruff check app tests
+
+      - name: Ruff format check
+        run: ruff format --check app tests
+
+      - name: MyPy
+        run: mypy app
+
+      - name: Pytest
+        run: pytest tests/ -v
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/grademap_test
+          MINING_SHARED_SECRET: ci-secret
+          K_ANONYMITY_THRESHOLD: 10

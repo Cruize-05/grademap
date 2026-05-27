@@ -1,0 +1,40 @@
+{
+  "name": "@grademap/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@grademap/shared": "workspace:*",
+    "@supabase/supabase-js": "^2.43.4",
+    "@tanstack/react-query": "^5.45.0",
+    "lucide-react": "^0.396.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@hookform/resolvers": "^3.6.0",
+    "react-hook-form": "^7.52.0",
+    "react-router-dom": "^6.24.0",
+    "recharts": "^2.12.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.1",
+    "vitest": "^1.6.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/jest-dom": "^6.4.6"
+  }
+}

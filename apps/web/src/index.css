@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color-scheme: light;
+    background-color: #FAFAFC;
+    color: #1A1A2E;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Tabular figures for all numeric content */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Focus ring for accessibility */
+  :focus-visible {
+    outline: 2px solid #2E4A87;
+    outline-offset: 2px;
+  }
+}

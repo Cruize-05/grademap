@@ -1,0 +1,73 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: grademap
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/grademap
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      MINING_BASE_URL: http://mining:8000
+      MINING_SHARED_SECRET: ${MINING_SHARED_SECRET:-change-me}
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+      K_ANONYMITY_THRESHOLD: ${K_ANONYMITY_THRESHOLD:-10}
+      ALLOWED_EMAIL_DOMAIN: ub.cm
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  mining:
+    build:
+      context: .
+      dockerfile: apps/mining/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/grademap
+      MINING_SHARED_SECRET: ${MINING_SHARED_SECRET:-change-me}
+      K_ANONYMITY_THRESHOLD: ${K_ANONYMITY_THRESHOLD:-10}
+      MODELS_DIR: /app/models
+    volumes:
+      - mining_models:/app/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:4000
+        VITE_SUPABASE_URL: ${SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  pg_data:
+  mining_models:

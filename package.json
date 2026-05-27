@@ -1,0 +1,32 @@
+{
+  "name": "grademap-ub",
+  "private": true,
+  "version": "0.0.0",
+  "description": "GradeMap UB - Academic Performance Mining for Cameroonian University Students",
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "build": "pnpm --parallel -r build",
+    "lint": "eslint . --ext .ts,.tsx && ruff check apps/mining",
+    "format": "node node_modules/prettier/bin/prettier.cjs --write \"**/*.{ts,tsx,json,md}\" && ruff format apps/mining",
+    "typecheck": "pnpm --parallel -r typecheck",
+    "test": "pnpm --parallel -r test",
+    "seed": "pnpm --filter @grademap/api seed",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

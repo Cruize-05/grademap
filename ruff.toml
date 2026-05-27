@@ -1,0 +1,17 @@
+﻿target-version = "py311"
+line-length = 100
+
+[lint]
+select = ["E", "F", "I", "UP", "B", "S"]
+ignore = [
+  "S101",   # use of assert (allowed in tests)
+  "S608",   # SQL injection: our dynamic IN clauses use SQLAlchemy-parameterised values
+  "N",      # naming: Pydantic models use camelCase fields to match TS types; ML uses X/y
+]
+
+[lint.per-file-ignores]
+"tests/**/*.py" = ["S"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

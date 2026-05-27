@@ -1,0 +1,30 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-web:
+    name: Deploy Web → Netlify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trigger Netlify deploy hook
+        run: curl -s -X POST "${{ secrets.NETLIFY_DEPLOY_HOOK }}"
+
+  deploy-api:
+    name: Deploy API → Render
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trigger Render API deploy
+        run: curl -s -X POST "${{ secrets.RENDER_API_DEPLOY_HOOK }}"
+
+  deploy-mining:
+    name: Deploy Mining → Render
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trigger Render Mining deploy
+        run: curl -s -X POST "${{ secrets.RENDER_MINING_DEPLOY_HOOK }}"
