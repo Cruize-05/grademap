@@ -8,7 +8,7 @@ institutionsRouter.get("/", async (_req, res, next) => {
   try {
     const { data, error } = await supabaseAdmin
       .from("institutions")
-      .select("id, code, name, email_domain")
+      .select("id, code, name, email_domain, grade_mapping, max_grade_point")
       .order("name");
 
     if (error) throw error;

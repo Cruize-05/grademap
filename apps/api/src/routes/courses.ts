@@ -10,14 +10,17 @@ const K_THRESHOLD = Number(process.env["K_ANONYMITY_THRESHOLD"] ?? 10);
 
 const searchSchema = z.object({
   institution: z.string().optional(),
+  institution_id: z.string().uuid().optional(),
   q: z.string().optional(),
-  limit: z.coerce.number().min(1).max(50).default(20),
+  limit: z.coerce.number().min(1).max(100).default(20),
 });
 
-/** GET /api/courses — public read of the course catalogue. */
+/** GET /api/courses — public read of the course catalogue.
+ *  Accepts ?institution=CODE or ?institution_id=UUID to filter by institution.
+ */
 coursesRouter.get("/", async (req, res, next) => {
   try {
-    const { institution, q, limit } = searchSchema.parse(req.query);
+    const { institution, institution_id, q, limit } = searchSchema.parse(req.query);
 
     let query = supabaseAdmin
       .from("courses")
@@ -25,7 +28,9 @@ coursesRouter.get("/", async (req, res, next) => {
       .order("code")
       .limit(limit);
 
-    if (institution) {
+    if (institution_id) {
+      query = query.eq("institution_id", institution_id);
+    } else if (institution) {
       const { data: inst } = await supabaseAdmin
         .from("institutions")
         .select("id")

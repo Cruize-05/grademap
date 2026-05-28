@@ -2,9 +2,15 @@
 -- These are representative courses; real catalogue must be confirmed by admin.
 -- Insert institution first.
 
-INSERT INTO institutions (code, name, email_domain, max_grade_point)
-VALUES ('UB', 'University of Buea', 'ub.cm', 4.00)
-ON CONFLICT (code) DO NOTHING;
+INSERT INTO institutions (code, name, email_domain, max_grade_point, grade_mapping)
+VALUES (
+  'UB',
+  'University of Buea',
+  'ub.cm',
+  4.00,
+  '{"A": 4.00, "B+": 3.50, "B": 3.00, "C+": 2.50, "C": 2.00, "D": 1.00, "F": 0.00}'::jsonb
+)
+ON CONFLICT (code) DO UPDATE SET grade_mapping = EXCLUDED.grade_mapping;
 
 -- Sample UB courses (Faculty of Science, level 100-300)
 INSERT INTO courses (institution_id, code, title, credits, level)

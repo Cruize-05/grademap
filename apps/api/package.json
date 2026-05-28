@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests",
-    "test": "jest --passWithNoTests",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --passWithNoTests",
     "migrate": "tsx src/scripts/migrate.ts",
     "seed": "tsx src/scripts/seed.ts",
     "rls:test": "tsx src/scripts/rls-test.ts"

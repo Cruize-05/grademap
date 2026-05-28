@@ -5,6 +5,12 @@
 -- Each synthetic student gets a row in auth.users and profiles, marked as
 -- verified, so RLS and aggregate logic work correctly.
 
+-- Remove any previous synthetic run so re-seeding is idempotent.
+-- grade_submissions cascade-deletes when profiles are deleted.
+DELETE FROM profiles
+  WHERE id IN (SELECT id FROM auth.users WHERE email LIKE 'synth-%@ub.cm');
+DELETE FROM auth.users WHERE email LIKE 'synth-%@ub.cm';
+
 DO $$
 DECLARE
   v_institution_id uuid;
@@ -27,9 +33,10 @@ BEGIN
 
   SELECT ARRAY_AGG(id) INTO v_course_ids FROM courses WHERE institution_id = v_institution_id;
 
-  -- Create 30 synthetic profiles (with matching auth.users rows for FK integrity)
+  -- Create 30 synthetic profiles (with matching auth.users rows for FK integrity).
+  -- UUIDs are deterministic (based on loop index) so re-running the seed is idempotent.
   FOR i IN 1..30 LOOP
-    v_profile_id := gen_random_uuid();
+    v_profile_id := ('10000000-0000-0000-0000-' || lpad(i::text, 12, '0'))::uuid;
 
     INSERT INTO auth.users (id, email)
     VALUES (v_profile_id, 'synth-' || i::text || '@ub.cm')

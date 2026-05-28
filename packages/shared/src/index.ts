@@ -7,6 +7,9 @@ export interface Institution {
   code: InstitutionCode;
   name: string;
   emailDomain: string;
+  /** Letter grade → grade_point map. Empty object when not yet configured. */
+  gradeMapping: Record<string, number>;
+  maxGradePoint: number;
 }
 
 export interface Course {
