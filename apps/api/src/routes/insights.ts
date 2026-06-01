@@ -2,6 +2,7 @@ import { Router, type Response, type NextFunction } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
 import axios from "axios";
+import { filterByKAnonymity } from "../lib/kAnonymity.js";
 
 export const insightsRouter = Router();
 
@@ -105,7 +106,7 @@ insightsRouter.post("/combinations/check", async (req, res, next) => {
     // Mining service already enforces the k=10 gate at the SQL layer, but we
     // re-filter here as defence-in-depth after validating the response shape.
     const data = combinationsResponseSchema.parse(response.data);
-    const filtered = data.combinations.filter((c) => c.nStudents >= K_THRESHOLD);
+    const filtered = filterByKAnonymity(data.combinations, K_THRESHOLD);
 
     res.json({ combinations: filtered });
   } catch (err) {

@@ -198,6 +198,31 @@ Set these in each provider's dashboard (not in the repo):
 
 ---
 
+## Testing
+
+Each service has its own suite. From the repo root:
+
+| Command                                  | Service | Covers                                                                 |
+| ---------------------------------------- | ------- | ---------------------------------------------------------------------- |
+| `pnpm --filter @grademap/web test`       | Web     | Vitest — the bulk-paste CSV parser (`bulkGrades`) and its validations  |
+| `pnpm --filter @grademap/api test`       | API     | Jest — auth gating, grade-route validation, and the k-anonymity filter |
+| `pnpm --filter @grademap/api rls:test`   | API     | RLS isolation against a **live Postgres** (`DATABASE_URL` required)    |
+| `cd apps/mining && .venv/Scripts/pytest` | Mining  | Pipeline transforms, difficulty index, association rules, trajectory   |
+
+Lint, typecheck, and build mirror CI:
+
+```bash
+pnpm --filter @grademap/web  lint && pnpm --filter @grademap/web  typecheck
+pnpm --filter @grademap/api  lint && pnpm --filter @grademap/api  typecheck
+cd apps/mining && ruff check . && mypy app
+```
+
+The unit suites (vitest, jest) run with **no external services** — they stub the
+Supabase/mining boundaries. Only `rls:test` needs a real Postgres; point
+`DATABASE_URL` at the local instance and run `pnpm seed` first.
+
+---
+
 ## Build plan status
 
 - [x] **Phase 0** — Bootstrap (monorepo, configs, all services start + respond to `/health`)
@@ -210,7 +235,7 @@ Set these in each provider's dashboard (not in the repo):
 - [x] Phase 7 — Admin Console
 - [x] Phase 8 — PDF Export
 - [x] Phase 9 — CI/CD & Deploy (workflows green locally; cloud provisioning deferred)
-- [ ] Phase 10 — Quality & Docs
+- [x] Phase 10 — Quality & Docs (first web/api unit suites; Testing docs)
 
 ---
 

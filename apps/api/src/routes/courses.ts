@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import axios from "axios";
 import { supabaseAdmin } from "../middleware/auth.js";
+import { meetsKAnonymity } from "../lib/kAnonymity.js";
 
 export const coursesRouter = Router();
 
@@ -106,7 +107,7 @@ coursesRouter.get("/:id/difficulty", async (req, res, next) => {
       res.json({ insufficientData: true, threshold: K_THRESHOLD });
       return;
     }
-    if (result.nStudents < K_THRESHOLD) {
+    if (!meetsKAnonymity(result.nStudents, K_THRESHOLD)) {
       res.json({ insufficientData: true, threshold: K_THRESHOLD });
       return;
     }
