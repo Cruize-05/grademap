@@ -69,6 +69,28 @@ coursesRouter.get("/", async (req, res, next) => {
   }
 });
 
+/** GET /api/courses/:id — public read of a single course's metadata. */
+coursesRouter.get("/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const { data, error } = await supabaseAdmin
+      .from("courses")
+      .select("id, code, title, credits, level, institution_id")
+      .eq("id", id)
+      .single();
+
+    if (error || !data) {
+      res.status(404).json({ error: { code: "not_found", message: "Course not found" } });
+      return;
+    }
+
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+});
+
 /** GET /api/courses/:id/difficulty — k-anonymity enforced. */
 coursesRouter.get("/:id/difficulty", async (req, res, next) => {
   try {

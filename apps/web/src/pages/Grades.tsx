@@ -666,9 +666,12 @@ export default function Grades() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-gray-900">
+                      <Link
+                        to={`/courses/${row.course_id}`}
+                        className="text-sm font-semibold text-primary hover:underline"
+                      >
                         {row.courses?.code ?? "—"}
-                      </p>
+                      </Link>
                       <StatusBadge status={row.status} />
                     </div>
                     <p className="text-xs text-gray-500 truncate mt-0.5">
