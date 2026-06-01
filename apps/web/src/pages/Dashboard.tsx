@@ -10,7 +10,10 @@ import {
   ShieldCheck,
   Sparkles,
   LogOut,
+  FileDown,
+  Loader2,
 } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "../hooks/useAuth.ts";
 import { useProfile } from "../hooks/useProfile.ts";
 import { api } from "../lib/api.ts";
@@ -122,6 +125,7 @@ export default function Dashboard() {
               value={currentGpa.value.toFixed(2)}
               subtitle={`across ${currentGpa.n} grade${currentGpa.n === 1 ? "" : "s"}`}
             />
+            <DownloadReportButton />
             <PlaceholderCard
               icon={TrendingUp}
               title="Planned Risk Score"
@@ -148,6 +152,37 @@ export default function Dashboard() {
       <footer className="text-center text-xs text-gray-400 mt-6 px-4">
         This is statistical guidance, not academic advice. Confirm with your faculty advisor.
       </footer>
+    </div>
+  );
+}
+
+function DownloadReportButton() {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDownload = async (): Promise<void> => {
+    setPending(true);
+    setError(null);
+    try {
+      await api.download("/api/grades/report", "grademap-report.pdf");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <div>
+      <button
+        onClick={handleDownload}
+        disabled={pending}
+        className="w-full flex items-center justify-center gap-2 bg-white border border-border rounded-xl p-3 text-sm font-semibold text-primary hover:bg-primary/5 disabled:opacity-60 transition-colors"
+      >
+        {pending ? <Loader2 className="animate-spin" size={16} /> : <FileDown size={16} />}
+        Download PDF report
+      </button>
+      {error && <p className="text-xs text-danger mt-1 px-1">{error}</p>}
     </div>
   );
 }
