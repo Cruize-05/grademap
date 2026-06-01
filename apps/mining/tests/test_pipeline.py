@@ -7,9 +7,23 @@ from app.pipeline import mining, preprocessing, transformation
 
 @pytest.fixture()
 def raw_df() -> pd.DataFrame:
-    """Minimal synthetic DataFrame mimicking v_anonymized_grades output."""
+    """Minimal synthetic DataFrame mimicking v_anonymized_grades output.
+
+    student_hash is assigned so that three students fail BOTH course_a and
+    course_b (global rows 4&22, 9&27, 14&32 share a hash). That gives the
+    failed-course basket builder a real co-failure pair to surface; everyone
+    else gets a unique hash.
+    """
+    # Default: each row is its own (single-course) student.
+    student_hash = [f"s{i:02d}" for i in range(50)]
+    # Stitch three co-failure students across the course_a / course_b fail rows.
+    for a_row, b_row, h in [(4, 22, "cf1"), (9, 27, "cf2"), (14, 32, "cf3")]:
+        student_hash[a_row] = h
+        student_hash[b_row] = h
+
     return pd.DataFrame(
         {
+            "student_hash": student_hash,
             "institution_id": ["UB"] * 50,
             "course_id": (["course_a"] * 20 + ["course_b"] * 15 + ["course_c"] * 15),
             "semester": [1] * 25 + [2] * 25,
@@ -60,6 +74,20 @@ def test_transformation_course_stats_shape(raw_df: pd.DataFrame) -> None:
     assert "pass_rate" in stats.columns
     assert "n_students" in stats.columns
     assert len(stats) == 3  # 3 courses in synthetic data
+
+
+def test_transformation_builds_per_student_failure_baskets(raw_df: pd.DataFrame) -> None:
+    cleaned = preprocessing.run(raw_df)
+    result = transformation.run(cleaned)
+    baskets = result["baskets"]
+
+    # Only multi-course failure baskets survive (single-course dropped).
+    assert (baskets["courses"].apply(len) >= 2).all()
+
+    # The three stitched co-failure students each failed course_a AND course_b.
+    co_fail = {"course_a", "course_b"}
+    matches = baskets["courses"].apply(lambda cs: co_fail.issubset(set(cs)))
+    assert matches.sum() == 3
 
 
 def test_difficulty_computes_score(raw_df: pd.DataFrame) -> None:

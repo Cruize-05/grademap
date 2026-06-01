@@ -8,6 +8,23 @@ export const coursesRouter = Router();
 const MINING_BASE_URL = process.env["MINING_BASE_URL"] ?? "http://localhost:8000";
 const K_THRESHOLD = Number(process.env["K_ANONYMITY_THRESHOLD"] ?? 10);
 
+// Response shape from the mining service: either a full difficulty record or
+// an insufficient-data sentinel. Validated before we trust/forward it.
+const difficultyResponseSchema = z.union([
+  z.object({
+    courseId: z.string(),
+    nStudents: z.number(),
+    passRate: z.number(),
+    avgGradePoint: z.number(),
+    difficultyScore: z.number(),
+    updatedAt: z.string(),
+  }),
+  z.object({
+    insufficientData: z.boolean(),
+    threshold: z.number(),
+  }),
+]);
+
 const searchSchema = z.object({
   institution: z.string().optional(),
   institution_id: z.string().uuid().optional(),
@@ -61,13 +78,13 @@ coursesRouter.get("/:id/difficulty", async (req, res, next) => {
     // Mining returns either DifficultyResponse {nStudents,...} or
     // InsufficientDataResponse {insufficientData: true, threshold}.
     // Defence-in-depth: re-check the gate even though mining already enforces it.
-    const result = response.data as { nStudents?: number; insufficientData?: boolean };
+    const result = difficultyResponseSchema.parse(response.data);
 
-    if (result.insufficientData) {
+    if ("insufficientData" in result) {
       res.json({ insufficientData: true, threshold: K_THRESHOLD });
       return;
     }
-    if (result.nStudents !== undefined && result.nStudents < K_THRESHOLD) {
+    if (result.nStudents < K_THRESHOLD) {
       res.json({ insufficientData: true, threshold: K_THRESHOLD });
       return;
     }

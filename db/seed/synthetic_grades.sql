@@ -74,3 +74,65 @@ BEGIN
   RAISE NOTICE 'Synthetic grades inserted for dev/CI.';
 END;
 $$;
+
+-- Co-failure cohort — DEV / CI ONLY.
+-- Injects a *known* dangerous combination so the association-rule miner has a
+-- real pattern to surface (the base cohort above is i.i.d. random, so Apriori
+-- finds nothing). 15 students who fail BOTH CSC201 and CSC301 together. With
+-- 15 >= k=10, the rule {CSC201} -> {CSC301} clears the k-anonymity gate and
+-- appears in dangerous_combinations_cache after a pipeline run.
+DO $$
+DECLARE
+  v_institution_id uuid;
+  v_csc201         uuid;
+  v_csc301         uuid;
+  v_math101        uuid;
+  v_profile_id     uuid;
+  i                int;
+BEGIN
+  SELECT id INTO v_institution_id FROM institutions WHERE code = 'UB';
+  IF v_institution_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  SELECT id INTO v_csc201  FROM courses WHERE institution_id = v_institution_id AND code = 'CSC201';
+  SELECT id INTO v_csc301  FROM courses WHERE institution_id = v_institution_id AND code = 'CSC301';
+  SELECT id INTO v_math101 FROM courses WHERE institution_id = v_institution_id AND code = 'MATH101';
+  IF v_csc201 IS NULL OR v_csc301 IS NULL THEN
+    RAISE NOTICE 'CSC201/CSC301 not found — skipping co-failure cohort.';
+    RETURN;
+  END IF;
+
+  FOR i IN 1..15 LOOP
+    v_profile_id := ('20000000-0000-0000-0000-' || lpad(i::text, 12, '0'))::uuid;
+
+    INSERT INTO auth.users (id, email)
+    VALUES (v_profile_id, 'synth-cf-' || i::text || '@ub.cm')
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO profiles (id, institution_id, programme, level, verified_at)
+    VALUES (v_profile_id, v_institution_id, 'CS', 2, now())
+    ON CONFLICT DO NOTHING;
+
+    -- The dangerous pair: both failed (grade F, 0.00).
+    INSERT INTO grade_submissions
+      (profile_id, course_id, semester, academic_year, grade, grade_point, status)
+    VALUES
+      (v_profile_id, v_csc201, 1, 2024, 'F', 0.00, 'approved'),
+      (v_profile_id, v_csc301, 1, 2024, 'F', 0.00, 'approved')
+    ON CONFLICT DO NOTHING;
+
+    -- A passing course so the cohort isn't degenerate (and contributes to the
+    -- per-course difficulty stats for MATH101).
+    IF v_math101 IS NOT NULL THEN
+      INSERT INTO grade_submissions
+        (profile_id, course_id, semester, academic_year, grade, grade_point, status)
+      VALUES
+        (v_profile_id, v_math101, 1, 2024, 'B', 3.00, 'approved')
+      ON CONFLICT DO NOTHING;
+    END IF;
+  END LOOP;
+
+  RAISE NOTICE 'Co-failure cohort (CSC201+CSC301) inserted for dev/CI.';
+END;
+$$;

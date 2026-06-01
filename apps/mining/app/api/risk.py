@@ -81,9 +81,11 @@ async def compute_risk_score(req: RiskRequest) -> RiskResponse:
             )
         score_components.append(d * 40)
 
-    # Driver 2: dangerous co-enrollment combinations
+    # Driver 2: dangerous co-failure combinations. confidence is
+    # P(fail B | fail A) over failed-course baskets, so it *is* the co-failure
+    # rate (matches combinations.py).
     for combo in combo_rows:
-        co_fail = round((1 - float(combo["confidence"])) * 100, 1)
+        co_fail = round(float(combo["confidence"]) * 100, 1)
         drivers.append(
             RiskDriver(
                 description=f"Co-failure rate {co_fail}% (n={combo['n_students']})",

@@ -17,7 +17,9 @@ Three algorithms:
 3. **GPA trajectory** — Ridge regression per institution on
    (mean_grade_point_so_far, n_courses_so_far) → next-semester GPA.
    Alpha tuned via 5-fold cross-validation (RidgeCV).
-   Model persisted with joblib in models/<institution_id>.pkl.
+   Persisted with joblib in models/<institution_id>.pkl as a dict
+   {"model", "residual_std"} so the endpoint can build a residual-based
+   confidence interval instead of a hardcoded band.
 """
 
 import logging
@@ -25,6 +27,7 @@ import os
 import pathlib
 
 import joblib
+import numpy as np
 import pandas as pd
 from mlxtend.frequent_patterns import apriori, association_rules
 from mlxtend.preprocessing import TransactionEncoder
@@ -94,13 +97,18 @@ def train_trajectory_models(clean_df: pd.DataFrame) -> dict[str, object]:
     models: dict[str, object] = {}
 
     for institution_id, group in clean_df.groupby("institution_id"):
-        # Build panel: for each synthetic student-semester, compute cumulative stats
-        # as a proxy for individual student history (best effort without profile_id).
-        group = group.sort_values(["academic_year", "semester"])
-        group["cum_mean_gp"] = group["grade_point"].expanding().mean()
-        group["cum_n_courses"] = range(1, len(group) + 1)
-        group["next_gpa"] = group["grade_point"].shift(-1)
-        panel = group.dropna(subset=["next_gpa"])
+        # Build a per-student panel: for each student (linked via the salted
+        # student_hash pseudonym), walk their grade history in chronological
+        # order and use cumulative stats to predict their next grade point.
+        panels: list[pd.DataFrame] = []
+        for _student, sgroup in group.groupby("student_hash"):
+            sgroup = sgroup.sort_values(["academic_year", "semester"]).copy()
+            sgroup["cum_mean_gp"] = sgroup["grade_point"].expanding().mean()
+            sgroup["cum_n_courses"] = range(1, len(sgroup) + 1)
+            sgroup["next_gpa"] = sgroup["grade_point"].shift(-1)
+            panels.append(sgroup.dropna(subset=["next_gpa"]))
+
+        panel = pd.concat(panels, ignore_index=True) if panels else pd.DataFrame()
 
         if len(panel) < K_THRESHOLD:
             logger.warning("Institution %s: insufficient data for trajectory model", institution_id)
@@ -112,9 +120,20 @@ def train_trajectory_models(clean_df: pd.DataFrame) -> dict[str, object]:
         model = RidgeCV(alphas=[0.1, 1.0, 10.0], cv=5)
         model.fit(X, y)
 
+        # Residual standard deviation on the training set — drives the
+        # confidence band at prediction time (1.645 * std ≈ 90% interval).
+        residuals = y - model.predict(X)
+        residual_std = float(np.std(residuals, ddof=1)) if len(residuals) > 1 else 0.0
+
+        artifact = {"model": model, "residual_std": residual_std}
         model_path = MODELS_DIR / f"{institution_id}.pkl"
-        joblib.dump(model, model_path)
-        models[str(institution_id)] = model
-        logger.info("Trajectory model saved: %s (alpha=%.2f)", model_path, float(model.alpha_))
+        joblib.dump(artifact, model_path)
+        models[str(institution_id)] = artifact
+        logger.info(
+            "Trajectory model saved: %s (alpha=%.2f, residual_std=%.3f)",
+            model_path,
+            float(model.alpha_),
+            residual_std,
+        )
 
     return models

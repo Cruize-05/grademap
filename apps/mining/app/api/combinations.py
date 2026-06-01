@@ -58,7 +58,10 @@ async def check_combinations(req: ComboRequest) -> ComboResponse:
             confidence=float(r["confidence"]),
             lift=float(r["lift"]),
             nStudents=int(r["n_students"]),
-            coFailRate=round((1 - float(r["confidence"])) * 100, 1),
+            # confidence is P(fail B | fail A) over the failed-course baskets —
+            # i.e. of students who failed course A, the fraction who also failed
+            # course B. That fraction *is* the co-failure rate.
+            coFailRate=round(float(r["confidence"]) * 100, 1),
         )
         for r in rows
     ]

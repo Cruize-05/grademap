@@ -83,7 +83,20 @@ async def compute_trajectory(req: TrajectoryRequest) -> TrajectoryResponse:
             ),
         )
 
-    model = joblib.load(model_path)
+    artifact = joblib.load(model_path)
+    # Backwards-compat: older runs persisted the bare estimator; newer runs
+    # persist {"model", "residual_std"}.
+    if isinstance(artifact, dict):
+        model = artifact["model"]
+        residual_std = float(artifact.get("residual_std", 0.0))
+    else:
+        model = artifact
+        residual_std = 0.0
+
+    # 90% confidence half-width from the model's training residuals
+    # (z = 1.645). Floor at a small band so a near-perfect fit still shows
+    # honest uncertainty rather than a zero-width interval.
+    ci_half = max(1.645 * residual_std, 0.1)
 
     projections: list[TrajectoryPoint] = []
     for i, semester in enumerate(req.plannedSemesters):
@@ -91,9 +104,6 @@ async def compute_trajectory(req: TrajectoryRequest) -> TrajectoryResponse:
         X = np.array([[cum_mean, cum_n + n_planned]])
         pred_gpa = float(model.predict(X)[0])
         pred_gpa = max(0.0, min(pred_gpa, 4.0))
-
-        # Approximate 90% CI using ±0.3 (placeholder until residuals are stored)
-        ci_half = 0.3
         projections.append(
             TrajectoryPoint(
                 semesterIndex=i + 1,
