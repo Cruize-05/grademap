@@ -45,8 +45,11 @@ insightsRouter.post("/combinations/check", async (req, res, next) => {
       plannedCourseIds,
     });
 
-    const data = response.data as { combinations?: Array<{ n_students: number }> };
-    const filtered = (data.combinations ?? []).filter((c) => c.n_students >= K_THRESHOLD);
+    // Mining service already enforces the k=10 gate at the SQL layer, but we
+    // re-filter here as defence-in-depth. Field name is camelCase to match the
+    // mining service's Pydantic response model.
+    const data = response.data as { combinations?: Array<{ nStudents: number }> };
+    const filtered = (data.combinations ?? []).filter((c) => c.nStudents >= K_THRESHOLD);
 
     res.json({ combinations: filtered });
   } catch (err) {

@@ -41,7 +41,8 @@ async def compute_risk_score(req: RiskRequest) -> RiskResponse:
     params = {f"c{i}": cid for i, cid in enumerate(course_ids)}
     difficulty_rows = read_query(
         f"""
-        SELECT course_id, difficulty_score, n_students, pass_rate
+        SELECT course_id, n_students, pass_rate,
+               (1.0 - pass_rate) AS difficulty_score
         FROM course_difficulty_cache
         WHERE course_id IN ({placeholders})
         AND n_students >= :k

@@ -16,6 +16,10 @@ def get_engine() -> Engine:
     global _engine
     if _engine is None:
         url = os.environ["DATABASE_URL"]
+        # The Node/pg ecosystem accepts `postgres://`, but SQLAlchemy requires
+        # `postgresql://`. Normalise so one DATABASE_URL works for both runtimes.
+        if url.startswith("postgres://"):
+            url = "postgresql://" + url[len("postgres://") :]
         _engine = create_engine(url, pool_pre_ping=True, pool_size=3, max_overflow=2)
     return _engine
 

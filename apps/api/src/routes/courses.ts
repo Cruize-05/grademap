@@ -58,9 +58,16 @@ coursesRouter.get("/:id/difficulty", async (req, res, next) => {
     const { id } = req.params;
 
     const response = await axios.get(`${MINING_BASE_URL}/courses/${id}/difficulty`);
-    const result = response.data as { n_students?: number };
+    // Mining returns either DifficultyResponse {nStudents,...} or
+    // InsufficientDataResponse {insufficientData: true, threshold}.
+    // Defence-in-depth: re-check the gate even though mining already enforces it.
+    const result = response.data as { nStudents?: number; insufficientData?: boolean };
 
-    if (result.n_students !== undefined && result.n_students < K_THRESHOLD) {
+    if (result.insufficientData) {
+      res.json({ insufficientData: true, threshold: K_THRESHOLD });
+      return;
+    }
+    if (result.nStudents !== undefined && result.nStudents < K_THRESHOLD) {
       res.json({ insufficientData: true, threshold: K_THRESHOLD });
       return;
     }
