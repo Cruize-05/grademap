@@ -102,7 +102,8 @@ export default function Dashboard() {
             <div className="flex-1 text-sm">
               <p className="font-semibold text-gray-900">Verify your institutional email</p>
               <p className="text-gray-600 mt-1">
-                Until you verify, your grades stay in quarantine and don't affect public aggregates.
+                Until you verify, your grades stay in quarantine and don&apos;t affect public
+                aggregates.
               </p>
               <Link
                 to="/grades"

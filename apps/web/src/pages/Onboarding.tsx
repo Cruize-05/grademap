@@ -148,7 +148,7 @@ export default function Onboarding() {
         </form>
 
         <p className="text-xs text-gray-400 text-center">
-          You can update these details later. To submit grades you'll need to verify your
+          You can update these details later. To submit grades you&apos;ll need to verify your
           institutional email.
         </p>
       </div>

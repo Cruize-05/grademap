@@ -45,7 +45,7 @@ export default function SignIn() {
       <div className="bg-white border border-border rounded-2xl p-8 max-w-sm w-full space-y-6">
         <div className="space-y-1">
           <h1 className="font-bold text-xl text-primary">Sign in to GradeMap UB</h1>
-          <p className="text-sm text-gray-500">We'll email you a magic link.</p>
+          <p className="text-sm text-gray-500">We&apos;ll email you a magic link.</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>

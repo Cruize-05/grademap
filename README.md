@@ -170,20 +170,46 @@ This check occurs at **both** the mining service and the API gateway (defence in
 | `ci-mining.yml` | PR + push to main (mining/ changes) | ruff → mypy → pytest                   |
 | `deploy.yml`    | push to main                        | triggers Netlify + Render deploy hooks |
 
+### Deployment secrets
+
+`deploy.yml` triggers each provider's deploy hook. Configure these as **GitHub
+Actions repository secrets** (Settings → Secrets and variables → Actions). Until
+they are set, each deploy job logs a skip and the workflow stays green.
+
+| Secret                      | Used by       | Where to get it                             |
+| --------------------------- | ------------- | ------------------------------------------- |
+| `NETLIFY_DEPLOY_HOOK`       | deploy-web    | Netlify site → Build & deploy → Build hooks |
+| `RENDER_API_DEPLOY_HOOK`    | deploy-api    | Render service → Settings → Deploy Hook     |
+| `RENDER_MINING_DEPLOY_HOOK` | deploy-mining | Render service → Settings → Deploy Hook     |
+
+### Runtime environment per host
+
+Set these in each provider's dashboard (not in the repo):
+
+| Host            | Variables                                                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Netlify (web)   | `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`                                                                                           |
+| Render (api)    | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `MINING_BASE_URL`, `MINING_SHARED_SECRET`, `CORS_ALLOWED_ORIGINS`, `K_ANONYMITY_THRESHOLD` |
+| Render (mining) | `DATABASE_URL`, `MINING_SHARED_SECRET`, `K_ANONYMITY_THRESHOLD`                                                                                              |
+| Supabase        | run `db/migrations/*.sql` in order; seed the course catalogue (no synthetic data in production)                                                              |
+
+> Cloud provisioning (Supabase project, Render services, Netlify site) requires
+> external accounts and is performed manually outside this repo.
+
 ---
 
 ## Build plan status
 
 - [x] **Phase 0** — Bootstrap (monorepo, configs, all services start + respond to `/health`)
-- [ ] Phase 1 — Database (migrations, RLS policies, seed)
-- [ ] Phase 2 — Auth & Profiles
-- [ ] Phase 3 — Grade Submission
-- [ ] Phase 4 — Mining Pipeline
-- [ ] Phase 5 — Insight Endpoints
-- [ ] Phase 6 — Dashboard & Planner UI
-- [ ] Phase 7 — Admin Console
-- [ ] Phase 8 — PDF Export
-- [ ] Phase 9 — CI/CD & Deploy
+- [x] Phase 1 — Database (migrations, RLS policies, seed)
+- [x] Phase 2 — Auth & Profiles
+- [x] Phase 3 — Grade Submission
+- [x] Phase 4 — Mining Pipeline
+- [x] Phase 5 — Insight Endpoints
+- [x] Phase 6 — Dashboard & Planner UI
+- [x] Phase 7 — Admin Console
+- [x] Phase 8 — PDF Export
+- [x] Phase 9 — CI/CD & Deploy (workflows green locally; cloud provisioning deferred)
 - [ ] Phase 10 — Quality & Docs
 
 ---

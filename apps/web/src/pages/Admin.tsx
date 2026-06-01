@@ -64,7 +64,7 @@ export default function Admin() {
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3 px-4 text-center">
         <ShieldCheck className="text-gray-300" size={40} />
         <p className="font-semibold text-gray-900">Admin access required</p>
-        <p className="text-sm text-gray-500">You don't have permission to view this page.</p>
+        <p className="text-sm text-gray-500">You don&apos;t have permission to view this page.</p>
         <Link to="/dashboard" className="text-primary text-sm font-semibold hover:underline">
           Back to dashboard
         </Link>

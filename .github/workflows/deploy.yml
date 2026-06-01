@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+# Each job triggers a provider deploy hook. The hooks are stored as repository
+# secrets; until they are configured the step skips gracefully instead of
+# failing the workflow, so the pipeline stays green before cloud provisioning.
 jobs:
   deploy-web:
     name: Deploy Web → Netlify
@@ -11,7 +14,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Trigger Netlify deploy hook
-        run: curl -s -X POST "${{ secrets.NETLIFY_DEPLOY_HOOK }}"
+        env:
+          HOOK: ${{ secrets.NETLIFY_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$HOOK" ]; then
+            curl -fsS -X POST "$HOOK"
+          else
+            echo "NETLIFY_DEPLOY_HOOK not set — skipping deploy."
+          fi
 
   deploy-api:
     name: Deploy API → Render
@@ -19,7 +29,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Trigger Render API deploy
-        run: curl -s -X POST "${{ secrets.RENDER_API_DEPLOY_HOOK }}"
+        env:
+          HOOK: ${{ secrets.RENDER_API_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$HOOK" ]; then
+            curl -fsS -X POST "$HOOK"
+          else
+            echo "RENDER_API_DEPLOY_HOOK not set — skipping deploy."
+          fi
 
   deploy-mining:
     name: Deploy Mining → Render
@@ -27,4 +44,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Trigger Render Mining deploy
-        run: curl -s -X POST "${{ secrets.RENDER_MINING_DEPLOY_HOOK }}"
+        env:
+          HOOK: ${{ secrets.RENDER_MINING_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$HOOK" ]; then
+            curl -fsS -X POST "$HOOK"
+          else
+            echo "RENDER_MINING_DEPLOY_HOOK not set — skipping deploy."
+          fi

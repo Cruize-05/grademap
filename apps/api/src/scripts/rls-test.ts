@@ -95,17 +95,10 @@ async function main(): Promise<void> {
       );
       assertEq(otherProfile.rows[0]?.count, "0", "user A must NOT see user B's profile");
 
-      // Test 3: grade_submissions — A should NOT see B's grade row when querying by profile_id
-      const otherGrades = await asA.query<{ count: string }>(
-        "SELECT count(*) FROM grade_submissions WHERE profile_id = $1",
-        [userB]
-      );
-      // Note: status='approved' policy lets verified users see approved grades.
-      // We seeded both as 'approved', so A WILL see B's row via the verified-read path.
-      // To prove the OWN-ROW isolation specifically, downgrade B's row to 'quarantine'.
-      // Let's switch the test to be more precise: use a quarantine row for B.
-
-      // Reset by making B's submission quarantine via admin
+      // Test 3: grade_submissions — A must NOT see B's row via the own-row path.
+      // The status='approved' policy lets verified users read approved grades, and
+      // both rows are seeded 'approved'. To prove OWN-ROW isolation specifically,
+      // downgrade B's row to 'quarantine' (only the owner can read quarantined rows).
       await admin.query("UPDATE grade_submissions SET status='quarantine' WHERE profile_id = $1", [
         userB,
       ]);

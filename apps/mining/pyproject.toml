@@ -1,0 +1,9 @@
+[tool.mypy]
+python_version = "3.11"
+
+# The scientific stack (pandas, numpy, scikit-learn, mlxtend) and joblib ship
+# without type stubs or a py.typed marker. Ignore missing-import errors for
+# these third-party modules so mypy still type-checks our own code strictly.
+[[tool.mypy.overrides]]
+module = ["pandas.*", "numpy.*", "joblib.*", "mlxtend.*", "sklearn.*"]
+ignore_missing_imports = true
