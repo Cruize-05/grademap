@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Response, type NextFunction } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
 import axios from "axios";
@@ -7,6 +7,23 @@ export const insightsRouter = Router();
 
 const MINING_BASE_URL = process.env["MINING_BASE_URL"] ?? "http://localhost:8000";
 const K_THRESHOLD = Number(process.env["K_ANONYMITY_THRESHOLD"] ?? 10);
+
+/**
+ * Forward an error from the mining service (or a validation error) to the
+ * client. Axios errors carry the mining status + FastAPI `detail`, which we
+ * surface verbatim so the UI can show e.g. "no grade history yet" (422) or
+ * "model not ready" (503) instead of an opaque 500.
+ */
+function handleInsightError(err: unknown, res: Response, next: NextFunction): void {
+  if (axios.isAxiosError(err) && err.response) {
+    const detail = (err.response.data as { detail?: string } | undefined)?.detail;
+    res.status(err.response.status).json({
+      error: { code: "MINING_ERROR", message: detail ?? "Insight service error." },
+    });
+    return;
+  }
+  next(err);
+}
 
 const insightsLimiter = rateLimit({
   windowMs: 60_000,
@@ -73,7 +90,7 @@ insightsRouter.post("/risk-score", async (req, res, next) => {
 
     res.json(riskResponseSchema.parse(response.data));
   } catch (err) {
-    next(err);
+    handleInsightError(err, res, next);
   }
 });
 
@@ -92,7 +109,7 @@ insightsRouter.post("/combinations/check", async (req, res, next) => {
 
     res.json({ combinations: filtered });
   } catch (err) {
-    next(err);
+    handleInsightError(err, res, next);
   }
 });
 
@@ -114,6 +131,6 @@ insightsRouter.post("/trajectory", async (req, res, next) => {
 
     res.json(trajectoryResponseSchema.parse(response.data));
   } catch (err) {
-    next(err);
+    handleInsightError(err, res, next);
   }
 });

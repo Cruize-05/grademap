@@ -119,12 +119,14 @@ export default function Dashboard() {
             <PlaceholderCard
               icon={ShieldAlert}
               title="Dangerous Combinations"
-              body="Add courses to your plan to check for risky pairs."
+              body="Check your planned courses for risky co-failure pairs."
+              cta={{ to: "/plan", label: "Check my plan" }}
             />
             <PlaceholderCard
               icon={Sparkles}
               title="Trajectory"
               body="Project your GPA over the next 1-4 semesters."
+              cta={{ to: "/plan", label: "Project my GPA" }}
             />
             <RecentSubmissions rows={grades.slice(0, 5)} />
           </div>
