@@ -9,6 +9,57 @@ adminRouter.use(requireAdmin);
 const MINING_BASE_URL = process.env["MINING_BASE_URL"] ?? "http://localhost:8000";
 const MINING_SECRET = process.env["MINING_SHARED_SECRET"] ?? "";
 
+adminRouter.get("/stats", async (_req, res, next) => {
+  try {
+    const countFor = (status: string) =>
+      supabaseAdmin
+        .from("grade_submissions")
+        .select("*", { count: "exact", head: true })
+        .eq("status", status);
+
+    const [quarantine, approved, rejected] = await Promise.all([
+      countFor("quarantine"),
+      countFor("approved"),
+      countFor("rejected"),
+    ]);
+
+    const { data: lastRun, error: runError } = await supabaseAdmin
+      .from("mining_runs")
+      .select("id, started_at, finished_at, status, row_count_input")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (runError) throw runError;
+
+    res.json({
+      submissions: {
+        quarantine: quarantine.count ?? 0,
+        approved: approved.count ?? 0,
+        rejected: rejected.count ?? 0,
+      },
+      lastMiningRun: lastRun,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get("/audit-log", async (_req, res, next) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("admin_audit_log")
+      .select("id, actor_id, action, target_id, notes, created_at")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+});
+
 adminRouter.get("/quarantine", async (req, res, next) => {
   try {
     const { data, error } = await supabaseAdmin

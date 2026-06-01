@@ -7,6 +7,7 @@ import {
   Plus,
   TrendingUp,
   ShieldAlert,
+  ShieldCheck,
   Sparkles,
   LogOut,
 } from "lucide-react";
@@ -46,6 +47,7 @@ export default function Dashboard() {
   const currentGpa = gpa(grades);
   const isVerified = profile.data?.verifiedAt != null;
   const hasGrades = grades.length > 0;
+  const isAdmin = user?.app_metadata?.["role"] === "admin";
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -68,6 +70,16 @@ export default function Dashboard() {
             >
               {currentGpa.value.toFixed(2)} GPA
             </span>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                aria-label="Admin console"
+                title="Admin console"
+                className="p-2 text-gray-400 hover:text-primary transition-colors"
+              >
+                <ShieldCheck size={18} />
+              </Link>
+            )}
             <button
               onClick={signOut}
               aria-label="Sign out"
