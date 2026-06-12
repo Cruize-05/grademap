@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import ws from "ws";
 
 const supabaseUrl = process.env["SUPABASE_URL"] ?? "";
 const supabaseAnonKey = process.env["SUPABASE_ANON_KEY"] ?? "";
@@ -14,7 +15,9 @@ const supabaseServiceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"] ?? "";
  * NEVER use this for "give me the caller's data" queries; that would bypass
  * RLS and defeat the security model.
  */
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  realtime: { transport: ws },
+});
 
 /**
  * Per-request Supabase client built with the caller's JWT. Queries through
@@ -24,6 +27,7 @@ export function supabaseAsUser(token: string): SupabaseClient {
   return createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false },
+    realtime: { transport: ws },
   });
 }
 
