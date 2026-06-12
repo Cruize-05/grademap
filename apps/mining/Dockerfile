@@ -1,3 +1,7 @@
+# GradeMap mining service — built from the repo root as Docker context:
+#   docker build -f apps/mining/Dockerfile .
+# On Railway: set "Dockerfile Path" = apps/mining/Dockerfile.
+
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -13,7 +17,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY apps/mining/app ./app
 
 ENV PYTHONUNBUFFERED=1
-ENV MINING_PORT=8000
+# UVICORN_HOST :: binds dual-stack (IPv4 + IPv6). IPv6 is required for
+# Railway private networking (mining.railway.internal). docker-compose
+# overrides this to 0.0.0.0.
+ENV UVICORN_HOST=::
+ENV PORT=8000
 
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Shell form so ${PORT} (injected by Railway) is honoured.
+CMD uvicorn app.main:app --host "$UVICORN_HOST" --port "$PORT"

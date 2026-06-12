@@ -1,5 +1,8 @@
 server {
-    listen 80;
+    # ${PORT} is substituted by the nginx image's envsubst entrypoint
+    # (Railway injects PORT; the Dockerfile defaults it to 80).
+    listen ${PORT};
+    listen [::]:${PORT};
     server_name _;
     root /usr/share/nginx/html;
     index index.html;

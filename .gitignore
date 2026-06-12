@@ -31,3 +31,9 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Documents / Office temp files (reports live outside the repo)
+*.docx
+*.doc
+~$*
+*.tsbuildinfo

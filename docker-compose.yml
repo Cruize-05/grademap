@@ -49,6 +49,9 @@ services:
       MINING_SHARED_SECRET: ${MINING_SHARED_SECRET:-change-me}
       K_ANONYMITY_THRESHOLD: ${K_ANONYMITY_THRESHOLD:-10}
       MODELS_DIR: /app/models
+      # IPv4 binding for local compose networking (Railway uses the
+      # Dockerfile default "::" for private networking)
+      UVICORN_HOST: 0.0.0.0
     volumes:
       - mining_models:/app/models
     depends_on:

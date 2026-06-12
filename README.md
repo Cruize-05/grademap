@@ -19,12 +19,12 @@ GradeMap UB is a secure, anonymised grade repository that applies a rigorous **K
                                              (read-only, service role)
 ```
 
-| Service        | Tech                         | Port | Deploy   |
-| -------------- | ---------------------------- | ---- | -------- |
-| Web SPA        | React 18 + Vite 5 + Tailwind | 5173 | Netlify  |
-| API Gateway    | Node 20 + Express 4          | 4000 | Render   |
-| Mining service | Python 3.11 + FastAPI        | 8000 | Render   |
-| Database       | Supabase Postgres 15 + RLS   | 5432 | Supabase |
+| Service        | Tech                         | Port | Deploy            |
+| -------------- | ---------------------------- | ---- | ----------------- |
+| Web SPA        | React 18 + Vite 5 + Tailwind | 5173 | Railway (nginx)   |
+| API Gateway    | Node 20 + Express 4          | 4000 | Railway           |
+| Mining service | Python 3.11 + FastAPI        | 8000 | Railway (private) |
+| Database       | Supabase Postgres 15 + RLS   | 5432 | Supabase          |
 
 ---
 
@@ -163,38 +163,23 @@ This check occurs at **both** the mining service and the API gateway (defence in
 
 ## CI/CD
 
-| Workflow        | Triggers                            | Steps                                  |
-| --------------- | ----------------------------------- | -------------------------------------- |
-| `ci-web.yml`    | PR + push to main (web/ changes)    | lint → typecheck → test → build        |
-| `ci-api.yml`    | PR + push to main (api/ changes)    | lint → typecheck → test → build        |
-| `ci-mining.yml` | PR + push to main (mining/ changes) | ruff → mypy → pytest                   |
-| `deploy.yml`    | push to main                        | triggers Netlify + Render deploy hooks |
+| Workflow        | Triggers                            | Steps                           |
+| --------------- | ----------------------------------- | ------------------------------- |
+| `ci-web.yml`    | PR + push to main (web/ changes)    | lint → typecheck → test → build |
+| `ci-api.yml`    | PR + push to main (api/ changes)    | lint → typecheck → test → build |
+| `ci-mining.yml` | PR + push to main (mining/ changes) | ruff → mypy → pytest            |
 
-### Deployment secrets
+## Deployment (Railway + Supabase)
 
-`deploy.yml` triggers each provider's deploy hook. Configure these as **GitHub
-Actions repository secrets** (Settings → Secrets and variables → Actions). Until
-they are set, each deploy job logs a skip and the workflow stays green.
+The platform deploys as **three Railway services** built from this monorepo's
+Dockerfiles, plus a **Supabase** project for Postgres/Auth/RLS. Railway
+auto-deploys on every push to `main`; the per-service config files
+(`railway.api.json`, `railway.mining.json`, `railway.web.json`) select the
+Dockerfile, healthcheck, and watch paths for each service.
 
-| Secret                      | Used by       | Where to get it                             |
-| --------------------------- | ------------- | ------------------------------------------- |
-| `NETLIFY_DEPLOY_HOOK`       | deploy-web    | Netlify site → Build & deploy → Build hooks |
-| `RENDER_API_DEPLOY_HOOK`    | deploy-api    | Render service → Settings → Deploy Hook     |
-| `RENDER_MINING_DEPLOY_HOOK` | deploy-mining | Render service → Settings → Deploy Hook     |
-
-### Runtime environment per host
-
-Set these in each provider's dashboard (not in the repo):
-
-| Host            | Variables                                                                                                                                                    |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Netlify (web)   | `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`                                                                                           |
-| Render (api)    | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `MINING_BASE_URL`, `MINING_SHARED_SECRET`, `CORS_ALLOWED_ORIGINS`, `K_ANONYMITY_THRESHOLD` |
-| Render (mining) | `DATABASE_URL`, `MINING_SHARED_SECRET`, `K_ANONYMITY_THRESHOLD`                                                                                              |
-| Supabase        | run `db/migrations/*.sql` in order; seed the course catalogue (no synthetic data in production)                                                              |
-
-> Cloud provisioning (Supabase project, Render services, Netlify site) requires
-> external accounts and is performed manually outside this repo.
+**See [DEPLOY.md](DEPLOY.md) for the full step-by-step guide** — Supabase
+setup, migrations, all required environment variables per service, deployment
+order, and the post-deploy smoke-test checklist.
 
 ---
 

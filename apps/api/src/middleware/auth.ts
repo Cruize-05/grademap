@@ -1,7 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-// @ts-ignore - ws module provides WebSocket for Node.js 20 support
-import WebSocket from "ws";
 
 const supabaseUrl = process.env["SUPABASE_URL"] ?? "";
 const supabaseAnonKey = process.env["SUPABASE_ANON_KEY"] ?? "";
@@ -17,7 +15,7 @@ const supabaseServiceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"] ?? "";
  * RLS and defeat the security model.
  */
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  realtime: { transport: WebSocket as any },
+  auth: { persistSession: false, autoRefreshToken: false },
 });
 
 /**
@@ -28,7 +26,6 @@ export function supabaseAsUser(token: string): SupabaseClient {
   return createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false },
-    realtime: { transport: WebSocket as any },
   });
 }
 
