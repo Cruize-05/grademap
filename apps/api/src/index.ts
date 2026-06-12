@@ -22,9 +22,14 @@ export const logger = isDev
 const app = express();
 
 app.use(helmet());
+// "*" reflects any origin (works with credentials, unlike the literal "*"
+// header); otherwise a comma-separated allowlist of exact origins.
+const corsOrigins = (process.env["CORS_ALLOWED_ORIGINS"] ?? "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim());
 app.use(
   cors({
-    origin: (process.env["CORS_ALLOWED_ORIGINS"] ?? "http://localhost:5173").split(","),
+    origin: corsOrigins.includes("*") ? true : corsOrigins,
     credentials: true,
   })
 );

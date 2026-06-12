@@ -2,7 +2,9 @@
 #   docker build -f apps/api/Dockerfile .
 # On Railway: set "Dockerfile Path" = apps/api/Dockerfile (root directory = repo root).
 
-FROM node:20-alpine AS builder
+# Node 22: @supabase/supabase-js >= 2.10x requires a native WebSocket global
+# at client construction; Node 20 lacks it and crashes on startup.
+FROM node:22-alpine AS builder
 WORKDIR /app
 # Pin pnpm 9 — matches lockfileVersion 9.0 and runs dependency scripts without
 # the approve-builds gate introduced in pnpm 10.
@@ -17,7 +19,7 @@ COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api
 RUN pnpm --filter @grademap/api build
 
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
